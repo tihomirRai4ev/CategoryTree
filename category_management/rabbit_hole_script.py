@@ -15,38 +15,52 @@ class RabbitHoleScript:
             adjacency_list[cat2].add(cat1)
         return adjacency_list
 
-    def bfs_deepest_path(self, start, adjacency_list):
+    def bfs_deepest_paths(self, start, adjacency_list):
         queue = deque([(start, [start])])
         visited = set()
-        deepest_path = []
+        deepest_paths = []
+        max_length = 0
 
         while queue:
             vertex, path = queue.popleft()
             if vertex not in visited:
                 visited.add(vertex)
-                if len(path) > len(deepest_path):
-                    deepest_path = path
+                if len(path) > max_length:
+                    max_length = len(path)
+                    deepest_paths = [path]
+                elif len(path) == max_length:
+                    deepest_paths.append(path)
 
                 for neighbor in adjacency_list[vertex]:
                     if neighbor not in visited:
                         new_path = path + [neighbor]
                         queue.append((neighbor, new_path))
 
-        return len(deepest_path) - 1, deepest_path
+        return max_length - 1, deepest_paths
+
+    def calculate_node_degrees(self, adjacency_list):
+        node_degrees = defaultdict(int)
+        for node in adjacency_list:
+            node_degrees[node] = len(adjacency_list[node])
+        return node_degrees
 
     def find_longest_rabbit_hole_optimized(self, adjacency_list):
+        node_degrees = self.calculate_node_degrees(adjacency_list)
+
+        min_degree = min(node_degrees.values())
+        lowest_degree_nodes = [node for node, degree in node_degrees.items() if degree == min_degree]
+
         max_length = 0
         longest_paths = []
 
-        for category in adjacency_list:
-            length, path = self.bfs_deepest_path(category, adjacency_list)
+        for category in lowest_degree_nodes:
+            length, paths = self.bfs_deepest_paths(category, adjacency_list)
             if length > max_length:
                 max_length = length
-                longest_paths = [path]
+                longest_paths = paths
             elif length == max_length:
-                longest_paths.append(path)
+                longest_paths.extend(paths)
 
-        # Normalize paths to avoid duplicates due to reverse paths
         normalized_paths = {tuple(sorted(path)) for path in longest_paths}
         return [list(path) for path in normalized_paths]
 
